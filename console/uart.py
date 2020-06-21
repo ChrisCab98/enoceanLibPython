@@ -2,14 +2,20 @@ from threading import Thread
 from serial import Serial
 from datetime import datetime, timedelta
 import time
+from mqtt.interfaceconnector import IMqttConnector
+from mqtt.client import MqttClient
 
 
 class Uart():
-    class Receiver(Thread):
+    class Receiver(Thread, IMqttConnector):
         def __init__(self, handle):
             super().__init__()
             self.__running = True
             self.__handle: Serial = handle
+
+            self.__mqtt = MqttClient(self, "raspberrypi.local")
+            self.__topic = "cmnd/smartSurgeOutlet3/power"
+
             self.__datas = []
             self.__syncByte: str = "55"
             self.__byte: str = []
@@ -21,6 +27,18 @@ class Uart():
             self.__RSSI = 0
             self.__formatDate = "%d/%m/%y %H:%M:%S.%f"
             self.run()
+
+        def Receive(self, server, topic: str, payload: bytes):
+            pass
+
+        def Connected(self, server):
+            pass
+
+        def Acknowledge(self, server, messageId: int):
+            pass
+
+        def Send(self, msg):
+            self.__mqtt.sendMessage(self.__topic, msg)
 
         def run(self):
             while self.__running:
@@ -58,6 +76,7 @@ class Uart():
                         print(self.__deltaTime)
                         self.__timeReleased = 0
                         self.__timePushed = 0
+                        self.Send("on")
                     except:
                         print("Switch hasn't been relased yet")
 
