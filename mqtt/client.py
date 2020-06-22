@@ -4,10 +4,11 @@ from mqtt.interfaceconnector import IMqttConnector
 
 
 class MqttClient(Thread):
-    def __init__(self, reader: IMqttConnector, host):
+    def __init__(self, reader: IMqttConnector, host, topics):
         super().__init__()
         self.__clientid = ""
         self.__host = host
+        self.__topics = topics
 
         # Initiate MQTT Client
         self.__client = mqtt.Client(
@@ -23,8 +24,12 @@ class MqttClient(Thread):
         self.__client.connect(host)
         self.start()
 
-        print("[MQTT] {} ready to send messages to {}".format(
-            self.__clientid, self.__host))
+        if len(self.__topics) > 0:
+            print("[MQTT] {} listening from {} on topics:".format(
+                self.__clientid, self.__host))
+        else:
+            print("[MQTT] {} ready to send messages to {}".format(
+                self.__clientid, self.__host))
 
     def __del__(self):
         self.Halt()
@@ -54,5 +59,5 @@ class MqttClient(Thread):
         userdata.Connected(self)
 
     def __OnPublish(self, _, userdata, mid: int):
-        #LOG.debug("Message {} Published...".format(mid))
+        # LOG.debug("Message {} Published...".format(mid))
         userdata.Acknowledge(self, mid)

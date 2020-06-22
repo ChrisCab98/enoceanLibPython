@@ -13,19 +13,13 @@ class Uart():
             self.__running = True
             self.__handle: Serial = handle
 
-            self.__mqtt = MqttClient(self, "raspberrypi.local")
-            self.__topic = "cmnd/smartSurgeOutlet3/power"
+            self.__mqtt = MqttClient(self, "localhost", "")
+            self.__topic = ""
 
             self.__datas = []
             self.__syncByte: str = "55"
             self.__byte: str = []
-            self.__timePushed = None
-            self.__timeReleased = None
-            self.__currentTime = None
-            self.__deltaTime = None
-            self.__isPush = "30"
-            self.__RSSI = 0
-            self.__formatDate = "%d/%m/%y %H:%M:%S.%f"
+            self.__uniqueID = ""
             self.run()
 
         def Receive(self, server, topic: str, payload: bytes):
@@ -37,19 +31,15 @@ class Uart():
         def Acknowledge(self, server, messageId: int):
             pass
 
-        def Send(self, msg):
+        def Send(self, topics, msg):
             self.__mqtt.sendMessage(self.__topic, msg)
 
-        def run(self):
+        def run(self) -> None:
             while self.__running:
                 self.__byte = (self.__handle.read(1).hex())
                 # Check for SyncByte
                 if self.__byte == self.__syncByte:
-                    print("Start receiving enOcean packet")
-
-                    # Get current time
-                    self.__currentTime = datetime.strptime(
-                        datetime.now().strftime("%d/%m/%y %H:%M:%S.%f"), self.__formatDate)
+                    print("[UART] Start receiving enOcean packet")
 
                     # Start saving packet with sync byte
                     self.__datas.append(self.__byte)
@@ -58,30 +48,19 @@ class Uart():
                     for x in range(0, 20):
                         self.__datas.append(self.__handle.read(1).hex())
 
-                    # print the datas
-                    print(self.__datas)
+                    # Extract uniqueID for packet
+                    self.__uniqueID = self.__datas[8]
+                    self.__uniqueID += self.__datas[9]
+                    self.__uniqueID += self.__datas[10]
+                    self.__uniqueID += self.__datas[11]
 
-                    # check if swith have been pressed or released
-                    if self.__datas[12] == self.__isPush:
-                        self.__timePushed = self.__currentTime
-                        print("PRESS")
+                    print("[UART] UniqueID : " + self.__uniqueID)
 
-                    else:
-                        self.__timeReleased = self.__currentTime
-                        print("RELEASE")
+                    self.__topic = "enocean/device/id/{}".format(
+                        self.__uniqueID)
 
-                    # Calculate the dela time between presse and release
-                    try:
-                        self.__deltaTime = self.__timeReleased - self.__timePushed
-                        print(self.__deltaTime)
-                        self.__timeReleased = 0
-                        self.__timePushed = 0
-                        self.Send("on")
-                    except:
-                        print("Switch hasn't been relased yet")
-
-                    self.__RSSI = int(self.__datas[18], 16)
-                    print("RSSI : -" + str(self.__RSSI) + " dBm")
+                    # Send packet to topics with uniqueID
+                    self.Send(self.__topic, str(self.__datas))
 
                 self.__datas.clear()
 
@@ -91,14 +70,13 @@ class Uart():
             print("[UART] Serial line closed")
 
     def __init__(self):
-        super().__init__()
         self.__SerialPortName = "/dev/ttyAMA0"
         self.__SerialPortSpeed = "57600"
         self.__handle = Serial(self.__SerialPortName,
                                self.__SerialPortSpeed, timeout=2.0)
         print(("[UART] Serial line {} @ {} bauds opened".format(
             self.__SerialPortName, self.__SerialPortSpeed)))
-        self.__thread = self.Receiver(self.__handle)
+        self.__thread: Uart.Receiver = self.Receiver(self.__handle)
 
     def Stop(self):
         self.__thread.Stop()
