@@ -51,6 +51,9 @@ class MqttClient(Thread):
     def __OnConnect(self, client, userdata, flags, rc):
         # Subscribe to a Topic
         if rc == 0:
+            if len(self.__topics) > 0 :
+                print("[MQTT] {} Subscribed to: {}".format(
+                self.__clientid, self.__topics))
             print("[MQTT] {} Connected.".format(self.__clientid))
         else:
             print("[MQTT] {} Bad connection. Returned code = {}".format(
