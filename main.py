@@ -2,10 +2,9 @@ from console.uart import Uart
 from enocean.switch import Switch
 import time
 
-print("Start")
 myUart = Uart()
-print("UART done")
 mySwitch1 = Switch("0032b591", "light")
+mySwitch1 = Switch("0032b5c0", "light2")
 
 # Run...
 while True:

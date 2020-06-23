@@ -12,16 +12,25 @@ class Switch(Thread, IMqttConnector):
         self.__device = device
         self.__state = ""
 
+        self.__formatDate = "%d/%m/%y %H:%M:%S.%f"
+
         self.__topics = "stat/{}/POWER".format(self.__device)
         self.__running = True
 
         print("[Switch] with uniqueID {} opened".format(self.__uniqueID))
 
-        self.__mqtt = MqttClient(self, "localhost", self.__topics)
+        self.__mqtt = MqttClient(self, "localhost", [
+                                 self.__topics, "enocean/device/id/{}".format(self.__uniqueID)])
 
-        self.run()
+        self.start()
 
     def Receive(self, server, topic: str, payload: bytes):
+        print(payload.decode("utf-8"))
+        print(payload[0])
+        print(payload[1])
+        print(payload[2])
+        print(payload[3])
+        print(payload[4])
         pass
 
     def Connected(self, server):

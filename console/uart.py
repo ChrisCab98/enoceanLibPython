@@ -6,21 +6,23 @@ from mqtt.interfaceconnector import IMqttConnector
 from mqtt.client import MqttClient
 
 
-class Uart():
+class Uart:
     class Receiver(Thread, IMqttConnector):
         def __init__(self, handle):
             super().__init__()
             self.__running = True
             self.__handle: Serial = handle
 
+            # MQTT
             self.__mqtt = MqttClient(self, "localhost", "")
             self.__topic = ""
 
+            # enOcean packet
             self.__datas = []
             self.__syncByte: str = "55"
             self.__byte: str = []
             self.__uniqueID = ""
-            self.run()
+            self.start()
 
         def Receive(self, server, topic: str, payload: bytes):
             pass
@@ -65,9 +67,9 @@ class Uart():
                 self.__datas.clear()
 
         def Stop(self):
+            print("[UART] Serial line closed")
             self.__running = False
             self.__handle.cancel_read()
-            print("[UART] Serial line closed")
 
     def __init__(self):
         self.__SerialPortName = "/dev/ttyAMA0"
@@ -77,6 +79,10 @@ class Uart():
         print(("[UART] Serial line {} @ {} bauds opened".format(
             self.__SerialPortName, self.__SerialPortSpeed)))
         self.__thread: Uart.Receiver = self.Receiver(self.__handle)
+
+    def __del__(self):
+        self.Stop()
+        self.__handle.close()
 
     def Stop(self):
         self.__thread.Stop()

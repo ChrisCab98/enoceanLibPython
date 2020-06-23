@@ -1,14 +1,15 @@
 import paho.mqtt.client as mqtt
 from threading import Thread
+from typing import List
 from mqtt.interfaceconnector import IMqttConnector
 
 
 class MqttClient(Thread):
-    def __init__(self, reader: IMqttConnector, host, topics):
+    def __init__(self, reader: IMqttConnector, host, topics: List[str]):
         super().__init__()
         self.__clientid = ""
         self.__host = host
-        self.__topics = topics
+        self.__topics: List[str] = topics
 
         # Initiate MQTT Client
         self.__client = mqtt.Client(
@@ -48,12 +49,13 @@ class MqttClient(Thread):
     def __OnMessage(self, client, userdata, msg):
         userdata.Receive(self, msg.topic, msg.payload)
 
-    def __OnConnect(self, client, userdata, flags, rc):
+    def __OnConnect(self, mqttc, userdata, flags, rc):
         # Subscribe to a Topic
         if rc == 0:
-            if len(self.__topics) > 0 :
+            for topic in self.__topics:
+                mqttc.subscribe(topic, 2)
                 print("[MQTT] {} Subscribed to: {}".format(
-                self.__clientid, self.__topics))
+                    self.__clientid, topic))
             print("[MQTT] {} Connected.".format(self.__clientid))
         else:
             print("[MQTT] {} Bad connection. Returned code = {}".format(
