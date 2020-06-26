@@ -70,7 +70,6 @@ class Uart:
         def run(self) -> None:
             while self.__running:
                 self.__byte = (self.__handle.read(1).hex())
-                # print(self.__byte)
                 # Check for SyncByte
                 if self.__byte == self.__syncByte:
                     print("[UART] Start receiving enOcean packet")

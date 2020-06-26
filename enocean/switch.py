@@ -8,10 +8,12 @@ from datetime import datetime, timedelta
 class Switch(IMqttConnector):
     def __init__(self, ID, device, dimmable=False):
         super().__init__()
+        # switch properties
         self.__uniqueID = ID
         self.__device = device
-
+        self.__dimmable = dimmable
         self.__deviceStatus = ""
+        self.__dimmerValue: int
 
         # packet payload
         self.__state = ""
@@ -19,17 +21,23 @@ class Switch(IMqttConnector):
         self.__RSSI = 0
         self.__timestamp1 = None
         self.__timestamp2 = None
+        self.__deltaTime = None
 
         self.__formatDate = "%d/%m/%y %H:%M:%S.%f"
 
         self.__topicsDevice = "stat/{}/POWER".format(self.__device)
+        self.__topicsDimmerResult = "stat/{}/RESULT".format(self.__device)
         self.__topicsCmndDevice = "cmnd/{}/power".format(self.__device)
-        # self.__running = True
+        self.__topicsCmndDeviceDimmer = "cmnd/{}/dimmer".format(self.__device)
+        self.__topicEnocean = "enocean/device/id/{}".format(self.__uniqueID)
+
         print("[Switch] with uniqueID {} opened".format(self.__uniqueID))
 
         # Instanciate MQTT Client
         self.__mqtt = MqttClient(self, "raspberrypi.local", [
-                                 self.__topicsDevice, "enocean/device/id/{}".format(self.__uniqueID)])
+                                 self.__topicsDevice, self.__topicsDimmerResult, self.__topicEnocean])
+
+        self.getStatus()
 
     def Receive(self, server, topic: str, payload: bytes):
 
@@ -39,7 +47,13 @@ class Switch(IMqttConnector):
             self.__deviceStatus = payload.decode("utf-8")
             print(self.__deviceStatus)
 
-        else:
+        if topic == self.__topicsDimmerResult:
+            dimmerValues = payload.decode("utf-8")
+            msg = json.loads(dimmerValues)
+            self.__dimmerValue = int(msg['Dimmer'])
+            print("Dimmer : " + str(self.__dimmerValue))
+
+        if topic == self.__topicEnocean:
             self.__packet = payload.decode("utf-8")
 
             msg = json.loads(self.__packet)
@@ -55,17 +69,41 @@ class Switch(IMqttConnector):
             else:
                 self.__timestamp2 = datetime.strptime(
                     datetime.now().strftime("%d/%m/%y %H:%M:%S.%f"), self.__formatDate)
-                print("Button press then released !")
 
-                if self.__deviceStatus == "ON":
-                    self.Send("off")
-                if self.__deviceStatus == "OFF":
-                    self.Send("on")
+                print("Button pressed then released !")
+
+                self.__deltaTime = self.__timestamp2 - self.__timestamp1
+
+                if self.__dimmable == True:
+                    if self.__deltaTime < timedelta(milliseconds=500):
+                        print("Short press")
+                        if self.__dimmerValue == 0:
+                            self.Send(self.__topicsCmndDeviceDimmer, "25")
+
+                        if self.__dimmerValue == 25:
+                            self.Send(self.__topicsCmndDeviceDimmer, "50")
+
+                        if self.__dimmerValue == 50:
+                            self.Send(self.__topicsCmndDeviceDimmer, "75")
+
+                        if self.__dimmerValue == 75:
+                            self.Send(self.__topicsCmndDeviceDimmer, "100")
+
+                        if self.__dimmerValue == 100:
+                            self.Send(self.__topicsCmndDeviceDimmer, "0")
+
+                    else:
+                        print("Long press")
+                        self.Send(self.__topicsCmndDevice, "off")
+                        self.Send(self.__topicsCmndDeviceDimmer, "0")
+
+                    print("deltaTime : " + str(self.__deltaTime))
+
                 else:
-                    self.Send("")
+                    self.invertStatus()
 
-    def Send(self, msg):
-        self.__mqtt.sendMessage(self.__topicsCmndDevice, msg)
+    def Send(self, topic, msg):
+        self.__mqtt.sendMessage(topic, msg)
 
     def Connected(self, server):
         pass
@@ -74,8 +112,15 @@ class Switch(IMqttConnector):
         pass
 
     def Stop(self):
-        # self.__running = False
         print("[Switch] with uniqueID {} closed".format(self.__uniqueID))
 
     def getStatus(self):
-        self.Send("")
+        self.Send(self.__topicsCmndDevice, "")
+        self.Send(self.__topicsCmndDeviceDimmer, "")
+
+    def invertStatus(self):
+        if self.__deviceStatus == "ON":
+            self.Send(self.__topicsCmndDevice, "off")
+
+        if self.__deviceStatus == "OFF":
+            self.Send(self.__topicsCmndDevice, "on")

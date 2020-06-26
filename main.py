@@ -4,7 +4,7 @@ import time
 
 myUart = Uart()
 mySwitch1 = Switch("0032b591", "smartSurgeOutlet3")
-mySwitch2 = Switch("0032b5c0", "LightChrisRoom")
+mySwitch2 = Switch("0032b5c0", "LightChrisRoom", dimmable=True)
 
 # Run...
 while True:
