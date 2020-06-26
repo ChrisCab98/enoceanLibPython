@@ -2,12 +2,11 @@ from mqtt.client import MqttClient
 from mqtt.interfaceconnector import IMqttConnector
 import time
 import json
-from threading import Thread
 from datetime import datetime, timedelta
 
 
-class Switch(Thread, IMqttConnector):
-    def __init__(self, ID, device):
+class Switch(IMqttConnector):
+    def __init__(self, ID, device, dimmable=False):
         super().__init__()
         self.__uniqueID = ID
         self.__device = device
@@ -25,15 +24,12 @@ class Switch(Thread, IMqttConnector):
 
         self.__topicsDevice = "stat/{}/POWER".format(self.__device)
         self.__topicsCmndDevice = "cmnd/{}/power".format(self.__device)
-        self.__running = True
+        # self.__running = True
         print("[Switch] with uniqueID {} opened".format(self.__uniqueID))
 
         # Instanciate MQTT Client
         self.__mqtt = MqttClient(self, "raspberrypi.local", [
                                  self.__topicsDevice, "enocean/device/id/{}".format(self.__uniqueID)])
-
-        # Start thread
-        self.start()
 
     def Receive(self, server, topic: str, payload: bytes):
 
@@ -63,9 +59,10 @@ class Switch(Thread, IMqttConnector):
 
                 if self.__deviceStatus == "ON":
                     self.Send("off")
-                else:
+                if self.__deviceStatus == "OFF":
                     self.Send("on")
-                    pass
+                else:
+                    self.Send("")
 
     def Send(self, msg):
         self.__mqtt.sendMessage(self.__topicsCmndDevice, msg)
@@ -76,11 +73,9 @@ class Switch(Thread, IMqttConnector):
     def Acknowledge(self, server, messageId: int):
         pass
 
-    def run(self):
-        while self.__running:
-            # print("switch thread")
-            pass
-
     def Stop(self):
-        self.__running = False
+        # self.__running = False
         print("[Switch] with uniqueID {} closed".format(self.__uniqueID))
+
+    def getStatus(self):
+        self.Send("")
