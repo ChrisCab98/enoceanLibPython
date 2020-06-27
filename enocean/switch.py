@@ -41,23 +41,23 @@ class Switch(IMqttConnector):
 
     def Receive(self, server, topic: str, payload: bytes):
 
-        print(topic)
+        print("[MQTT] " + topic)
 
         if topic == self.__topicsDevice:
             self.__deviceStatus = payload.decode("utf-8")
-            print(self.__deviceStatus)
+            print("[MQTT] " + self.__deviceStatus)
 
         if topic == self.__topicsDimmerResult:
             dimmerValues = payload.decode("utf-8")
             msg = json.loads(dimmerValues)
             self.__dimmerValue = int(msg['Dimmer'])
-            print("Dimmer : " + str(self.__dimmerValue))
+            print("[MQTT] Dimmer : " + str(self.__dimmerValue))
 
         if topic == self.__topicEnocean:
             self.__packet = payload.decode("utf-8")
 
             msg = json.loads(self.__packet)
-            print(msg['packet'])
+            print("[MQTT] " + str(msg['packet']))
 
             self.__RSSI = int(msg['packet']['optionalData']['dBm'], 16)
             self.__state = msg['packet']['data']['status']
@@ -70,34 +70,34 @@ class Switch(IMqttConnector):
                 self.__timestamp2 = datetime.strptime(
                     datetime.now().strftime("%d/%m/%y %H:%M:%S.%f"), self.__formatDate)
 
-                print("Button pressed then released !")
+                print("[INFO] Button pressed then released !")
 
                 self.__deltaTime = self.__timestamp2 - self.__timestamp1
 
                 if self.__dimmable == True:
-                    if self.__deltaTime < timedelta(milliseconds=500):
-                        print("Short press")
-                        if self.__dimmerValue == 0:
-                            self.Send(self.__topicsCmndDeviceDimmer, "25")
 
-                        if self.__dimmerValue == 25:
-                            self.Send(self.__topicsCmndDeviceDimmer, "50")
+                    if self.__deltaTime < timedelta(milliseconds=250):
+                        print("[INFO] less than 250ms press")
+                        self.Send(self.__topicsCmndDeviceDimmer, "25")
 
-                        if self.__dimmerValue == 50:
-                            self.Send(self.__topicsCmndDeviceDimmer, "75")
+                    if timedelta(milliseconds=250) < self.__deltaTime < timedelta(milliseconds=500):
+                        print("[INFO] press between 250 & 500ms")
+                        self.Send(self.__topicsCmndDeviceDimmer, "50")
 
-                        if self.__dimmerValue == 75:
-                            self.Send(self.__topicsCmndDeviceDimmer, "100")
+                    if timedelta(milliseconds=500) < self.__deltaTime < timedelta(milliseconds=750):
+                        print("[INFO] press between 500 & 750ms")
+                        self.Send(self.__topicsCmndDeviceDimmer, "75")
 
-                        if self.__dimmerValue == 100:
-                            self.Send(self.__topicsCmndDeviceDimmer, "0")
+                    if timedelta(milliseconds=750) < self.__deltaTime < timedelta(milliseconds=1000):
+                        print("[INFO] press between 750 & 1000ms")
+                        self.Send(self.__topicsCmndDeviceDimmer, "100")
 
-                    else:
-                        print("Long press")
+                    if self.__deltaTime > timedelta(milliseconds=1000):
+                        print("[INFO] Long press")
                         self.Send(self.__topicsCmndDevice, "off")
                         self.Send(self.__topicsCmndDeviceDimmer, "0")
 
-                    print("deltaTime : " + str(self.__deltaTime))
+                    print("[INFO] DeltaTime : " + str(self.__deltaTime))
 
                 else:
                     self.invertStatus()

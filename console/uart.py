@@ -72,7 +72,6 @@ class Uart:
                 self.__byte = (self.__handle.read(1).hex())
                 # Check for SyncByte
                 if self.__byte == self.__syncByte:
-                    print("[UART] Start receiving enOcean packet")
 
                     # Start saving packet with sync byte
                     self.__rawPacket.append(self.__byte)
@@ -87,7 +86,7 @@ class Uart:
                     self.__uniqueID += self.__rawPacket[10]
                     self.__uniqueID += self.__rawPacket[11]
 
-                    print("[UART] packet from : " +
+                    print("[UART] Receiving enOcean packet from : " +
                           self.__uniqueID)
 
                     self.__topic = "enocean/device/id/{}".format(
