@@ -6,12 +6,13 @@ from datetime import datetime, timedelta
 
 
 class Switch(IMqttConnector):
-    def __init__(self, ID, device, dimmable=False):
+    def __init__(self, ID, device, channel="", dimmable=False):
         super().__init__()
         # switch properties
         self.__uniqueID = ID
         self.__device = device
         self.__dimmable = dimmable
+        self.__channel = channel
         self.__deviceStatus = ""
         self.__dimmerValue: int
 
@@ -25,17 +26,22 @@ class Switch(IMqttConnector):
 
         self.__formatDate = "%d/%m/%y %H:%M:%S.%f"
 
-        self.__topicsDevice = "stat/{}/POWER".format(self.__device)
-        self.__topicsDimmerResult = "stat/{}/RESULT".format(self.__device)
-        self.__topicsCmndDevice = "cmnd/{}/power".format(self.__device)
+        # Topics
+        # Get
+        self.__topicResult = "stat/{}/RESULT".format(self.__device)
+        # Set
         self.__topicsCmndDeviceDimmer = "cmnd/{}/dimmer".format(self.__device)
+        self.__topicsCmndDevice = "cmnd/{}/power{}".format(
+            self.__device, self.__channel)
+
+        # Bridge enOcean
         self.__topicEnocean = "enocean/device/id/{}".format(self.__uniqueID)
 
         print("[Switch] with uniqueID {} opened".format(self.__uniqueID))
 
         # Instanciate MQTT Client
         self.__mqtt = MqttClient(self, "raspberrypi.local", [
-                                 self.__topicsDevice, self.__topicsDimmerResult, self.__topicEnocean])
+                                 self.__topicResult, self.__topicEnocean])
 
         self.getStatus()
 
@@ -43,15 +49,24 @@ class Switch(IMqttConnector):
 
         print("[MQTT] " + topic)
 
-        if topic == self.__topicsDevice:
-            self.__deviceStatus = payload.decode("utf-8")
-            print("[MQTT] " + self.__deviceStatus)
+        # RESULT
+        if topic == self.__topicResult:
+            try:
+                dimmerValues = payload.decode("utf-8")
+                msg = json.loads(dimmerValues)
+                self.__dimmerValue = int(msg['Dimmer'])
+                print("[MQTT] Dimmer : " + str(self.__dimmerValue))
+            except:
+                pass
 
-        if topic == self.__topicsDimmerResult:
-            dimmerValues = payload.decode("utf-8")
-            msg = json.loads(dimmerValues)
-            self.__dimmerValue = int(msg['Dimmer'])
-            print("[MQTT] Dimmer : " + str(self.__dimmerValue))
+            try:
+                deviceStatus = payload.decode("utf-8")
+                msg = json.loads(deviceStatus)
+                # powerChannel = "POWER{}".format(self.__channel)
+                self.__deviceStatus = (msg['POWER{}'.format(self.__channel)])
+                print("[MQTT] Status : " + str(self.__deviceStatus))
+            except:
+                pass
 
         if topic == self.__topicEnocean:
             self.__packet = payload.decode("utf-8")
@@ -94,7 +109,7 @@ class Switch(IMqttConnector):
 
                         print("[INFO] DeltaTime : " + str(self.__deltaTime))
                     else:
-                        self.Send(self.__topicsCmndDevice, "off")
+                        self.Send(self.__topicsCmndDevice, "OFF")
                         self.Send(self.__topicsCmndDeviceDimmer, "0")
 
                 else:
@@ -118,7 +133,7 @@ class Switch(IMqttConnector):
 
     def invertStatus(self):
         if self.__deviceStatus == "ON":
-            self.Send(self.__topicsCmndDevice, "off")
+            self.Send(self.__topicsCmndDevice, "OFF")
 
         if self.__deviceStatus == "OFF":
-            self.Send(self.__topicsCmndDevice, "on")
+            self.Send(self.__topicsCmndDevice, "ON")
