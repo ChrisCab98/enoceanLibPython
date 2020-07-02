@@ -15,7 +15,7 @@ class Uart:
             self.__handle: Serial = handle
 
             # MQTT
-            self.__mqtt = MqttClient(self, "raspberrypi.local", "")
+            self.__mqtt = MqttClient(self, "127.0.0.1", "")
             self.__topic = ""
 
             # enOcean packet

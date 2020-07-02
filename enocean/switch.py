@@ -40,7 +40,7 @@ class Switch(IMqttConnector):
         print("[Switch] with uniqueID {} opened".format(self.__uniqueID))
 
         # Instanciate MQTT Client
-        self.__mqtt = MqttClient(self, "raspberrypi.local", [
+        self.__mqtt = MqttClient(self, "127.0.0.1", [
                                  self.__topicResult, self.__topicEnocean])
 
         self.getStatus()
