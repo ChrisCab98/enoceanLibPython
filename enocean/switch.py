@@ -41,7 +41,7 @@ class Switch(IMqttConnector):
 
         # Instanciate MQTT Client
         self.__mqtt = MqttClient(self, "127.0.0.1", [
-                                 self.__topicResult, self.__topicEnocean])
+                                 self.__topicResult, self.__topicEnocean],"Switch-"+self.__uniqueID)
 
         self.getStatus()
 

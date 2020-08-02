@@ -25,7 +25,8 @@ class Thermometer(IMqttConnector):
         print("[Thermometer] with uniqueID {} opened".format(self.__uniqueID))
 
         # Instanciate MQTT Client
-        self.__mqtt = MqttClient(self, "127.0.0.1", [self.__topicEnocean, ])
+        self.__mqtt = MqttClient(self, "127.0.0.1", [
+                                 self.__topicEnocean, ], "TemperatureSensor-"+self.__uniqueID)
 
     def Receive(self, server, topic: str, payload: bytes):
 

@@ -5,9 +5,9 @@ from mqtt.interfaceconnector import IMqttConnector
 
 
 class MqttClient(Thread):
-    def __init__(self, reader: IMqttConnector, host, topics: List[str]):
+    def __init__(self, reader: IMqttConnector, host, topics: List[str], clientID):
         super().__init__()
-        self.__clientid = ""
+        self.__clientid = clientID
         self.__host = host
         self.__topics: List[str] = topics
 
