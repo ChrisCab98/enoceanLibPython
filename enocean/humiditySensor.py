@@ -37,7 +37,7 @@ class HumiditySensor(IMqttConnector):
         msg = json.loads(self.__packet)
         print("[MQTT] " + str(msg['packet']))
 
-        self.__humidity = int(str(msg['packet']["data"]["DB2"]), 16)*40/250
+        self.__humidity = int(str(msg['packet']["data"]["DB2"]), 16)*100/250
 
         self.Send(self.__setRelativeHumidity, str(self.__humidity))
 
