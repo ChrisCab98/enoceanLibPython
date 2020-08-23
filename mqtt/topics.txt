@@ -1,0 +1,16 @@
+Tasmota's topics exemples :
+
+Sonoff Basic :
+- cmnd : cmnd/sonoffFan/power TOGGLE | cmnd/sonoffFan/power1 TOGGLE
+
+- stat : stat/sonoffFan/RESULT {"POWER":"ON"}
+
+Sonoff Generic :
+- cmnd : cmnd/SmartSurgeDesk/power1 TOGGLE
+
+- stat : stat/SmartSurgeDesk/RESULT {"POWER1":"OFF"}
+
+Sonoff B1 :
+- cmnd : cmnd/LightChrisRoom/dimmer 50
+
+- stat :stat/LightChrisRoom/RESULT {"POWER":"ON","Dimmer":50,"Color":"0000000080","HSBColor":"0,0,0","White":50,"CT":500,"Channel":[0,0,0,0,50]}
