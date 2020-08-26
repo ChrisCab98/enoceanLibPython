@@ -18,7 +18,7 @@ deviceProperties1 = {
             {
                 "MQTTName": "SmartSurgeDesk",
                 "channel": 1,
-                "dimmable": True
+                "dimmable": False
             }
         }
 
@@ -62,13 +62,13 @@ deviceProperties3 = {
             {
                 "MQTTName": "LightChrisRoom",
                 "channel": 1,
-                "dimmable": True
+                "dimmable": False
             },
             "1":
             {
                 "MQTTName": "LightChrisRoom",
                 "channel": 1,
-                "dimmable": False
+                "dimmable": True
             }
         }
 

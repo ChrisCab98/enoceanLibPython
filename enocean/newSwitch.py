@@ -80,20 +80,19 @@ class Switch(IMqttConnector):
 
         if self.__state == "30":
             self.__channel = msg['packet']['data']['data']
-            print("[INFO] Pressed")
+            print("[INFO] Pressed on channel {}".format(self.__channel))
 
             self.__timestamp1 = datetime.strptime(
                 datetime.now().strftime("%d/%m/%y %H:%M:%S.%f"), self.__formatDate)
 
         else:
-            print("[INFO] Released")
+            # print("[INFO] Released on channel {}".format(self.__channel))
             self.__timestamp2 = datetime.strptime(
                 datetime.now().strftime("%d/%m/%y %H:%M:%S.%f"), self.__formatDate)
 
             self.__deltaTime = self.__timestamp2 - self.__timestamp1
 
             if self.__channel == "10":
-                print(self.__deviceProperties["device"]["0"]["dimmable"])
                 if self.__deviceProperties["device"]["0"]["dimmable"] == True:
                     self.sendBrightness(self.__topicDevices["0"]["dimmer"])
                 else:
@@ -102,17 +101,20 @@ class Switch(IMqttConnector):
             if self.__channel == "30":
                 if self.__deviceProperties["device"]["1"]["dimmable"] == True:
                     self.sendBrightness(self.__topicDevices["1"]["dimmer"])
-                self.Send(self.__topicDevices["1"]["power"], "TOGGLE")
+                else:
+                    self.Send(self.__topicDevices["1"]["power"], "TOGGLE")
 
             if self.__channel == "50":
                 if self.__deviceProperties["device"]["2"]["dimmable"] == True:
                     self.sendBrightness(self.__topicDevices["2"]["dimmer"])
-                self.Send(self.__topicDevices["2"]["power"], "TOGGLE")
+                else:
+                    self.Send(self.__topicDevices["2"]["power"], "TOGGLE")
 
             if self.__channel == "70":
                 if self.__deviceProperties["device"]["3"]["dimmable"] == True:
                     self.sendBrightness(self.__topicDevices["3"]["dimmer"])
-                self.Send(self.__topicDevices["3"]["power"], "TOGGLE")
+                else:
+                    self.Send(self.__topicDevices["3"]["power"], "TOGGLE")
 
     def Send(self, topic, msg):
         self.__mqtt.sendMessage(topic, msg)
